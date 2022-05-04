@@ -18,7 +18,7 @@ class AddTodo extends React.Component {
 
     // 함수작성
     onButtonClick = () => {
-        this.add = this.state.item;  // add 함수 사용
+        this.add(this.state.item);  // add 함수 사용
         this.setState({ item: { title: ""} });
     }
 
