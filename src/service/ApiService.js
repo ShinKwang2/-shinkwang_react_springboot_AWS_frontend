@@ -1,4 +1,3 @@
-import { LaptopWindowsRounded } from "@material-ui/icons";
 import { API_BASE_URL } from "../app-config";
 const ACCESS_TOKEN = "ACCESS_TOKEN";
 
@@ -61,8 +60,5 @@ export function signout() {
 }
 
 export function signup(userDTO) {
-    return call("/auth/signup", "POST", userDTO)
-        .then((response) => {
-            window.location.href = "/";
-        });
+    return call("/auth/signup", "POST", userDTO);
 }
