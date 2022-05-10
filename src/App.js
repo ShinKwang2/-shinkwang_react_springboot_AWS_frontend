@@ -1,29 +1,51 @@
 import React from 'react';
 import Todo from './Todo';
 import AddTodo from './AddTodo';
-import { Paper, List, Container } from "@material-ui/core"
+import { Paper, List, Container, Grid, Button, AppBar, Toolbar, Typography } from "@material-ui/core"
 import './App.css';
+import { call, signout } from './service/ApiService';  // signout 추가
+import { StatusCodes } from 'http-status-codes';
+import Loading from './Loading';
 
 class App extends React.Component {
   constructor(props) {
     super(props);
     // 1) item -> items 배열로
     this.state = {
-      items: [
-        { id: "0", title: "Hello World 1", done: true},
-        { id: "1", title: "Hello world 2", done: false}
-      ],
+      items: [],
+      /* 1. 로딩중이라는 상태다. 생성자에 상태 변수를 추가한다. */
+      loading: true,
     };
+  }
+
+  componentDidMount() {
+    /* 2. componentDidMount 에서 todo 리스트를 가져오는 
+      GET 리퀘스트가 성공적으로 리턴하는 경우 loading을 false 로 고친다.
+      더 이상 로딩중이 아니라는 뜻이다. */
+    call("/todo", "GET", null).then((response) => 
+      this.setState({ items: response.data, loading: false })
+    );
   }
 
   //add 함수 추가
   add = (item) => {
-    const thisItems = this.state.items;
-    item.id = "ID-" + thisItems.length; // key를 위한 id 추가
-    item.done = false;  // done 초기화
-    thisItems.push(item); // 리스트에 아이템 추가
-    this.setState({ items: thisItems }) // 업데이트는 반드시 this.setState 로 해야함
-    console.log("items : ", this.state.items);
+    call("/todo", "POST", item).then((response) => 
+      this.setState({ items: response.data })
+    );
+  }
+
+  // delete 함수 추가
+  delete = (item) => {
+    call("/todo", "DELETE", item).then((response) =>
+      this.setState({ items: response.data })
+    );
+  }
+
+  // update 함수 구현
+  update = (item) => {
+    call("/todo", "PUT", item).then((response) => 
+      this.setState({ items: response.data })
+    );
   }
 
   render() {
@@ -31,21 +53,65 @@ class App extends React.Component {
       <Paper style={{ margin: 16 }}>
         <List>
           {this.state.items.map((item, idx) => (
-            <Todo item={item} key={item.id} />
+            <Todo 
+              item={item} 
+              key={item.id} 
+              delete={this.delete}
+              update={this.update}
+            />
           ))}
         </List>
       </Paper>
     );
 
-    // 3) 생성된 컴포넌트 리턴
-    return (
-    <div className="App">
-      <Container maxWidth="md">
-        <AddTodo add={this.add} />
-        <div className="TodoList">{todoItems}</div>
-      </Container>
-    </div>
+    // navigationBar 추가
+    var navigationBar = (
+      <AppBar posistion="static">
+        <Toolbar>
+          <Grid justifyContent="space-between" container>
+            <Grid item>
+              <Typography variant="h6">오늘의 할 일</Typography>
+            </Grid>
+            <Grid>
+              <Button color="inherit" onClick={signout}>
+                로그아웃
+              </Button>
+            </Grid>
+          </Grid>
+        </Toolbar>
+      </AppBar>
     );
+
+    /* 로딩 중이 아닐 때 렌더링할 부분 */
+    var todoListPage = (
+      <div>
+        {navigationBar} {/* 내비게이션 바 렌더링 */}
+
+        <Container maxWidth="md" style={{ marginTop: "10%" }}>
+          <AddTodo add={this.add} />
+          <div className="TodoList">{todoItems}</div>
+        </Container>
+      </div>
+    );
+
+    /* 로딩 중일 때 렌더링할 부분 */
+    var loadingPage = (
+      <div>
+        <Container maxWidth="md">
+          <Loading />
+        </Container>
+      </div>
+    )
+
+    var content = loadingPage;
+
+    if (!this.state.loading) {
+      /* 로딩 중이 아니면 todoListPage 를 선택 */
+      content = todoListPage;
+    }
+
+    /* 선택한 content 렌더링 */
+    return <div className="App">{content}</div>
   }
 }
 
